@@ -9,4 +9,16 @@ I use this, as no other live system feeds my needs in which i can:
 
 ----
 
+How to build it yourself:
+
+```bash
+# YOU HAVE TO BE ON A ARCHLINUX (BASED) SYSTEM
+git clone 'https://github.com/narukeh/hekurarchlinux.git'
+sudo mkarchiso -v ./hekurarchlinux/
+```
+
+Then the `.iso` will be generated in `./out/`
+
+----
+
 <small>As of right now, it is just my installed system on a .iso, i will be adding pkgs which are common on a live system.</small>
