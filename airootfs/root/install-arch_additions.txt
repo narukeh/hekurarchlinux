@@ -1,0 +1,57 @@
+#!/bin/sh
+
+pacman --noconfirm -S archlinux-keyring
+
+##if on artix, then also this:
+#pacman --noconfirm --needed -S artix-keyring artix-archlinux-support
+##then add the repos in /etc/pacman.conf
+#pacman-key --populate archlinux
+
+pacman -S curl ca-certificates base-devel git ntp zsh
+
+ntpdate 0.us.pool.ntp.org
+
+useradd -m -g wheel -s /bin/zsh nix
+usermod -a -G wheel nix
+mkdir -p /home/nix
+chown -R nix:wheel /home/nix
+chpasswd nix:p@ssw0rd
+
+# Make pacman colorful, concurrent downloads and Pacman eye-candy.
+grep -q "ILoveCandy" /etc/pacman.conf || sed -i "/#VerbosePkgLists/a ILoveCandy" /etc/pacman.conf
+sed -i "s/^#ParallelDownloads = 8$/ParallelDownloads = 5/;s/^#Color$/Color/" /etc/pacman.conf
+
+# Use all cores for compilation.
+sed -i "s/-j2/-j$(nproc)/;s/^#MAKEFLAGS/MAKEFLAGS/" /etc/makepkg.conf
+
+##NOW install all the packages from your list
+
+pacman -S libxft-bgra-git
+
+#NOW copypasta/patch your dotfiles
+
+rmmod pcspkr
+echo "blacklist pcspkr" > /etc/modprobe.d/nobeep.conf
+
+chsh -s /bin/zsh nix
+
+# dbus UUID must be generated for Artix runit.
+dbus-uuidgen > /var/lib/dbus/machine-id
+
+##### Use system notifications for Brave on Artix
+####echo "export \$(dbus-launch)" > /etc/profile.d/dbus.sh
+
+
+# Tap to click
+[ ! -f /etc/X11/xorg.conf.d/40-libinput.conf ] && printf 'Section "InputClass"
+        Identifier "libinput touchpad catchall"
+        MatchIsTouchpad "on"
+        MatchDevicePath "/dev/input/event*"
+        Driver "libinput"
+	# Enable left mouse button by tapping
+	Option "Tapping" "on"
+EndSection' > /etc/X11/xorg.conf.d/40-libinput.conf
+
+# Fix fluidsynth/pulseaudio issue.
+grep -q "OTHER_OPTS='-a pulseaudio -m alsa_seq -r 48000'" /etc/conf.d/fluidsynth ||
+	echo "OTHER_OPTS='-a pulseaudio -m alsa_seq -r 48000'" >> /etc/conf.d/fluidsynth

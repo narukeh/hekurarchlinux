@@ -1,0 +1,74 @@
+#!/bin/sh
+exit 0
+# Set time
+timedate set-ntp 1
+
+# Partition
+fdisk /dev/sda
+
+#UEFI:
+# Makefile systems
+mkfs.fat -F32 /dev/sda1
+mkfs.ext /dev/sda3
+mkswap /dev/sda2
+swapon /dev/sda2
+# Mount partition
+mount /dev/sda3 /mnt
+mkdir /mnt/boot/EFI
+mount /dev/sda1 /mnt/boot/efi
+
+#Legacy BIOS:
+# Makefile systems
+mkfs.ext4 /dev/sda1
+mkfs.ext4 /dev/sda3
+mkswap /dev/sda2
+swapon /dev/sda2
+# Mount partition
+mount /dev/sda3 /mnt
+mkdir /mnt/boot
+mount /dev/sda1 /mnt/boot
+
+# actually install arch
+pacstrap /mnt base base-devel linux linux-firmware grub xfsprogs neovim networkmanager man-db man-pages #efibootmgr
+
+# fstab
+genfstab -U /mnt > /mnt/etc/fstab
+
+# chroot
+arch-chroot /mnt
+
+___________________________________________________________
+# GRUB
+# For BIOS
+grub-install --target=i386-pc /dev/sdX
+
+# For UEFI
+grub-install --target=x86_64-efi --bootloader-id=grub_uefi --recheck
+# or this if the above wont work
+grub-install --target=x86_64-efi --efi-directory=esp --bootloader-id=GRUB
+
+# Make config
+grub-mkconfig -o /boot/grub/grub.cfg
+____________________________________________________________
+
+# Root passwd
+passwd
+
+# Time zone & clock
+ln -sf /usr/share/zoneinfo/Europe/Rome /etc/localtime
+hwclock --systohc #This command assumes the hardware clock is set to UTC
+# Locales
+nvim /etc/locale.gen #and uncomment the ones u want
+locale-gen
+echo "LANG=en_US.UTF-8" > /etc/locale.conf
+echo "VMachine" > /etc/hostname
+
+#enable NetworkManager
+systemctl enable NetworkManager
+
+#exit
+exit
+umount -R /mnt
+poweroff
+
+# vim: filetype=sh

@@ -1,0 +1,3 @@
+#!/bin/sh
+
+exec /usr/bin/chromium --force-dark-mode --enable-features=WebUIDarkMode "$@"
